@@ -69,7 +69,7 @@ See every component in motion in the **[gallery](https://muhib-karim.github.io/c
 
 ## Install
 
-The package is distributed through GitHub, not the npm registry. It needs Remotion 4, React 18 and zod 3.22 as peer dependencies.
+The package is distributed through GitHub, not the npm registry. It needs Remotion 4, React 18 or newer and zod 3.22 as peer dependencies.
 
 From a release tarball (recommended, prebuilt):
 
