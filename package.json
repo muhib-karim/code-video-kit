@@ -1,0 +1,76 @@
+{
+  "name": "code-video-kit",
+  "version": "0.1.0",
+  "description": "34 code-first Remotion components for technical videos: titles, code, captions, data, transitions.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Muhib Karim",
+  "homepage": "https://muhib-karim.github.io/code-video-kit/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muhib-karim/code-video-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/muhib-karim/code-video-kit/issues"
+  },
+  "keywords": [
+    "remotion",
+    "video",
+    "react",
+    "code",
+    "syntax-highlighting",
+    "captions",
+    "charts",
+    "launch-video",
+    "motion-graphics"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsup",
+    "prepare": "tsup",
+    "studio": "remotion studio src/entry.ts",
+    "emit:registry": "node scripts/emit-registry.mjs",
+    "render:all": "node scripts/render-all.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "remotion": "^4.0.0",
+    "zod": "^3.22.3"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "4.0.290",
+    "@remotion/cli": "4.0.290",
+    "@remotion/renderer": "4.0.290",
+    "@types/node": "20.17.10",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.290",
+    "tsup": "8.3.5",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8",
+    "zod": "3.22.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

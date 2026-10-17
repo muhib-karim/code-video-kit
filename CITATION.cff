@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "code-video-kit: code-first video components for Remotion"
+type: software
+authors:
+  - family-names: Karim
+    given-names: Muhib
+version: 0.1.0
+date-released: 2026-10-17
+license: MIT
+repository-code: "https://github.com/muhib-karim/code-video-kit"
+url: "https://muhib-karim.github.io/code-video-kit/"
+keywords:
+  - remotion
+  - video
+  - react
+  - typescript
+  - data visualization
+  - captions
+abstract: >-
+  A TypeScript library of 34 Remotion components for short technical videos:
+  titles, syntax-highlighted code, word-timed captions, animated data charts,
+  transitions and device/browser frames. Each component ships a zod schema
+  and serialisable default props.

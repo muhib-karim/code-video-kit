@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>code-video-kit — gallery</title>
+    <meta name="description" content="Live gallery of code-video-kit: code-first Remotion components for launch videos, benchmark explainers and coding tutorials." />
+    <meta name="color-scheme" content="dark" />
+    <link rel="stylesheet" href="gallery.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#grid">Skip to components</a>
+
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="wordmark" href="./" aria-label="code-video-kit home">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M8 6 2 12l6 6M16 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>code-video-kit</span>
+        </a>
+        <nav aria-label="Project links" class="header-links">
+          <a href="https://github.com/muhib-karim/code-video-kit">GitHub</a>
+          <a href="https://github.com/muhib-karim/code-video-kit/releases">Releases</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="wrap hero" aria-labelledby="hero-title">
+        <p class="eyebrow">Remotion component library · MIT</p>
+        <h1 id="hero-title">Code-first video components for technical stories.</h1>
+        <p class="lead">
+          Titles, syntax-highlighted code, word-timed captions, benchmark charts and transitions.
+          Every component is typed, themeable and described by a zod schema, so you can customise it by hand or have a script generate the props.
+        </p>
+        <div class="install">
+          <code id="install-cmd">npm i github:muhib-karim/code-video-kit</code>
+          <button type="button" class="btn-copy" data-copy-target="install-cmd">Copy</button>
+        </div>
+        <p class="stats" id="stats" aria-live="polite"></p>
+      </section>
+
+      <section class="wrap" aria-labelledby="components-title">
+        <h2 id="components-title" class="visually-hidden">Components</h2>
+        <div class="toolbar">
+          <div class="chips" role="group" aria-label="Filter by group" id="chips"></div>
+          <label class="search">
+            <span class="visually-hidden">Search components</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <input id="search" type="search" placeholder="Search components" autocomplete="off" />
+          </label>
+        </div>
+
+        <div id="grid" class="grid" tabindex="-1" aria-busy="true">
+          <div class="card skeleton" aria-hidden="true"></div>
+          <div class="card skeleton" aria-hidden="true"></div>
+          <div class="card skeleton" aria-hidden="true"></div>
+          <div class="card skeleton" aria-hidden="true"></div>
+          <div class="card skeleton" aria-hidden="true"></div>
+          <div class="card skeleton" aria-hidden="true"></div>
+        </div>
+        <div id="empty" class="state" role="status" hidden></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-row">
+        <span>code-video-kit · MIT License · © 2026 Muhib Karim</span>
+        <span id="measured"></span>
+      </div>
+    </footer>
+
+    <div id="live" class="visually-hidden" aria-live="polite"></div>
+    <script src="gallery.js" defer></script>
+  </body>
+</html>
