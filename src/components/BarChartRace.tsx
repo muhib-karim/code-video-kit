@@ -30,7 +30,7 @@ export const barChartRaceSchema = z.object({
             'Optional bar colour (hex). Omit to use the theme categorical palette by series index; the colour stays with the series as it changes rank.',
           ),
         values: z
-          .array(z.number().min(0))
+          .array(z.number().finite().min(0))
           .min(2)
           .describe('Non-negative value at each keyframe, same order as keyframeLabels. Linearly interpolated between keyframes.'),
       }),

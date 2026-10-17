@@ -12,8 +12,9 @@ export interface DiffLine {
 
 /**
  * Parses a minimal unified diff body: each line starts with "+", "-" or " ".
- * Header lines ("+++", "---", "@@") are skipped. Lines with no marker are
- * treated as context so hand-written diffs stay forgiving.
+ * File/hunk headers and git metadata are skipped. Inside a hunk, leading
+ * "+"/"-" characters belong to the changed line. Unmarked lines are treated
+ * as context so hand-written diffs stay forgiving.
  */
 export function parseUnifiedDiff(text: string): DiffLine[] {
   const lines = text.replace(/\r\n/g, '\n').split('\n');
@@ -21,13 +22,20 @@ export function parseUnifiedDiff(text: string): DiffLine[] {
   const out: DiffLine[] = [];
   let oldNo = 1;
   let newNo = 1;
+  let inHunk = false;
   for (const line of lines) {
-    if (line.startsWith('+++') || line.startsWith('---')) continue;
+    if (line.startsWith('diff --git ')) {
+      inHunk = false;
+      continue;
+    }
+    if (!inHunk && /^(?:index |---[ \t]|\+\+\+[ \t])/.test(line)) continue;
+    if (line === '\\ No newline at end of file') continue;
     if (line.startsWith('@@')) {
       const m = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
       if (m) {
         oldNo = Number(m[1]);
         newNo = Number(m[2]);
+        inHunk = true;
       }
       continue;
     }

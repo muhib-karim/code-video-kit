@@ -12,6 +12,8 @@ export function parseLineRanges(spec: string): number[] {
     if (!m) continue;
     const a = Number(m[1]);
     const b = m[2] === undefined ? a : Number(m[2]);
+    // Beyond the safe integer range, incrementing i may never advance it.
+    if (!Number.isSafeInteger(a) || !Number.isSafeInteger(b)) continue;
     const lo = Math.min(a, b);
     const hi = Math.max(a, b);
     for (let i = lo; i <= hi; i++) if (i > 0) out.add(i);

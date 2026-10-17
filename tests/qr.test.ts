@@ -18,6 +18,11 @@ describe('utf8Bytes', () => {
     expect(utf8Bytes('Az')).toEqual([0x41, 0x7a]);
     expect(utf8Bytes('é')).toEqual([0xc3, 0xa9]);
     expect(utf8Bytes('€')).toEqual([0xe2, 0x82, 0xac]);
+    expect(utf8Bytes('😀')).toEqual([0xf0, 0x9f, 0x98, 0x80]);
+  });
+  it('replaces lone surrogates with the UTF-8 replacement character', () => {
+    expect(utf8Bytes('\ud800')).toEqual([0xef, 0xbf, 0xbd]);
+    expect(utf8Bytes('\udc00')).toEqual([0xef, 0xbf, 0xbd]);
   });
 });
 
@@ -28,11 +33,15 @@ describe('chooseVersion', () => {
     expect(chooseVersion(15, 'M')).toBe(2);
     expect(chooseVersion(26, 'M')).toBe(2);
     expect(chooseVersion(27, 'M')).toBe(3);
+    expect(chooseVersion(42, 'M')).toBe(3);
+    expect(chooseVersion(43, 'M')).toBe(4);
     // Version 1-L holds 17 bytes.
     expect(chooseVersion(17, 'L')).toBe(1);
     expect(chooseVersion(18, 'L')).toBe(2);
   });
   it('returns -1 when the data does not fit in version 10', () => {
+    expect(chooseVersion(213, 'M')).toBe(10);
+    expect(chooseVersion(214, 'M')).toBe(-1);
     expect(chooseVersion(5000, 'M')).toBe(-1);
   });
 });
@@ -62,7 +71,8 @@ describe('encodeQR', () => {
 
   it('uses the expected versions', () => {
     expect(encodeQR('HELLO', 'M').version).toBe(1);
-    expect(encodeQR('https://github.com/muhib-karim/code-video-kit', 'M').version).toBe(4);
+    expect(encodeQR('x'.repeat(42), 'M').version).toBe(3);
+    expect(encodeQR('x'.repeat(45), 'M').version).toBe(4);
   });
 
   it('writes identical format information in both copies', () => {

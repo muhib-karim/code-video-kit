@@ -15,9 +15,10 @@ export const leaderboardSchema = z.object({
     .array(
       z.object({
         name: z.string().describe('Display name of the entry. Keep it under ~18 characters.'),
-        score: z.number().min(0).describe('Non-negative score; entries are ranked by it and the bar length is proportional to it.'),
+        score: z.number().finite().min(0).describe('Non-negative score; entries are ranked by it and the bar length is proportional to it.'),
         delta: z
           .number()
+          .finite()
           .optional()
           .describe('Rank change since the previous period: positive = moved up (▲), negative = moved down (▼), 0 = unchanged (–). Omit to hide.'),
       }),

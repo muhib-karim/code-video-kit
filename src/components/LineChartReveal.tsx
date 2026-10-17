@@ -29,7 +29,7 @@ export const lineChartRevealSchema = z.object({
           .optional()
           .describe('Optional line colour (hex). Omit to use the theme categorical palette by series index.'),
         points: z
-          .array(z.number().min(0))
+          .array(z.number().finite().min(0))
           .min(2)
           .describe('Non-negative y values, one per xLabel. Extra points beyond xLabels are ignored.'),
       }),

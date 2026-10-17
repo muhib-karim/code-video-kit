@@ -51,7 +51,12 @@ const bundleMs = performance.now() - bundleStart;
 console.log(`[render-all] bundled in ${Math.round(bundleMs)} ms`);
 
 const all = await getCompositions(serveUrl, { inputProps: {} });
+const unknownIds = [...onlyIds].filter((id) => !all.some((c) => c.id === id));
+if (unknownIds.length) {
+  throw new Error(`Unknown composition id(s): ${unknownIds.join(', ')}`);
+}
 const compositions = onlyIds.size ? all.filter((c) => onlyIds.has(c.id)) : all;
+if (compositions.length === 0) throw new Error('No compositions found to render');
 console.log(`[render-all] rendering ${compositions.length} of ${all.length} compositions`);
 
 const results = [];

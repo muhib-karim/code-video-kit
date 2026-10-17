@@ -6,8 +6,8 @@ const byId: Array<[string, RegistryEntry]> = registry.map((e) => [e.id, e]);
 const byName: Array<[string, RegistryEntry]> = registry.map((e) => [e.name, e]);
 
 describe('registry', () => {
-  it('has at least 30 entries with unique ids', () => {
-    expect(registry.length).toBeGreaterThanOrEqual(30);
+  it('has exactly 34 entries with unique ids', () => {
+    expect(registry.length).toBe(34);
     const ids = registry.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -53,6 +53,22 @@ describe('schemas', () => {
 
   it.each(byId)('%s: rejects an invalid theme', (_id, entry) => {
     expect(entry.schema.safeParse({ ...entry.defaultProps, theme: 'sepia' }).success).toBe(false);
+  });
+
+  const nonFiniteProps: Array<[string, Record<string, unknown>]> = [
+    ['bar-chart-race', { series: [{ label: 'A', values: [1, Infinity] }, { label: 'B', values: [2, 3] }] }],
+    ['benchmark-bars', { items: [{ label: 'A', value: Infinity }] }],
+    ['line-chart-reveal', { series: [{ label: 'A', points: [0, Infinity] }] }],
+    ['stat-counter', { stats: [{ label: 'A', value: Infinity }, { label: 'B', value: 1 }] }],
+    ['leaderboard', { entries: [{ name: 'A', score: Infinity }] }],
+    ['leaderboard', { entries: [{ name: 'A', score: 1, delta: Infinity }] }],
+    ['word-captions', { words: [{ text: 'A', startSec: 0, endSec: Infinity }] }],
+    ['karaoke-caption', { words: [{ text: 'A', startSec: 0, endSec: Infinity }] }],
+    ['subtitle-bar', { cues: [{ text: 'A', startSec: 0, endSec: Infinity }] }],
+  ];
+  it.each(nonFiniteProps)('%s: rejects non-finite data and timings', (id, props) => {
+    const entry = registry.find((e) => e.id === id)!;
+    expect(entry.schema.safeParse({ ...entry.defaultProps, ...props }).success).toBe(false);
   });
 });
 

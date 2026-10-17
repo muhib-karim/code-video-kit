@@ -10,7 +10,7 @@ export const qrCardSchema = z.object({
   value: z
     .string()
     .min(1)
-    .describe('Text or URL encoded in the QR code (byte mode, up to ~270 bytes at "M"; longer values show an error in the card).'),
+    .describe('Text or URL encoded in the QR code (byte mode, up to 213 bytes at "M"; longer values show an error in the card).'),
   title: z.string().describe('Heading next to the code, e.g. "Star it on GitHub" (under ~24 characters).'),
   caption: z.string().describe('Supporting sentence under the title (under ~80 characters). Empty string hides it.'),
   errorCorrection: z

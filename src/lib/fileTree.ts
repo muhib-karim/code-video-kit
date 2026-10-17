@@ -48,7 +48,7 @@ export function buildTree(entries: readonly FileTreeInput[]): FileTreeRow[] {
         };
         node.children.set(part, child);
       }
-      if (!isLast) child.isDir = true;
+      if (!isLast || explicitDir) child.isDir = true;
       if (isLast) {
         child.highlight = child.highlight || Boolean(entry.highlight);
         if (entry.note) child.note = entry.note;

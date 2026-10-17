@@ -7,8 +7,8 @@ import { activeCueIndex, frameToSec } from '../lib/captions';
 
 const cueSchema = z.object({
   text: z.string().describe('Subtitle text for this cue. One or two short sentences; long text wraps to two lines.'),
-  startSec: z.number().min(0).describe('Time in seconds when the cue appears.'),
-  endSec: z.number().min(0).describe('Time in seconds when the cue disappears. Must be > startSec.'),
+  startSec: z.number().finite().min(0).describe('Time in seconds when the cue appears.'),
+  endSec: z.number().finite().min(0).describe('Time in seconds when the cue disappears. Must be > startSec.'),
 });
 
 export const subtitleBarSchema = z.object({
@@ -109,7 +109,8 @@ export const SubtitleBar: React.FC<SubtitleBarProps> = ({ theme, accent, cues, f
     const startF = cue.startSec * fps;
     const endF = cue.endSec * fps;
     const fadeF = Math.max(1, Math.min(6, (endF - startF) / 3));
-    const fadeIn = interpolate(frame, [startF, startF + fadeF], [0, 1], {
+    // Include the first displayed frame so a one-frame cue is visible.
+    const fadeIn = interpolate(frame + 1, [startF, startF + fadeF], [0, 1], {
       extrapolateLeft: 'clamp',
       extrapolateRight: 'clamp',
     });

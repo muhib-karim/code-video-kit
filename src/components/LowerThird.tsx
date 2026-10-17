@@ -100,8 +100,10 @@ export const LowerThird: React.FC<LowerThirdProps> = ({ theme, accent, name, rol
   const p = resolveTheme(theme, accent);
   const isLeft = side === 'left';
 
-  const enteredAt = ENTER_START + ENTER_FRAMES;
-  const outStart = Math.max(enteredAt, Math.min(enteredAt + holdFrames, durationInFrames - EXIT_FRAMES - 2));
+  // Allow the springs to pass their duration before starting the hold.
+  const enteredAt = Math.max(ENTER_START + 4 + ENTER_FRAMES, ENTER_START + 10 + 20) + 1;
+  const exitFrames = Math.min(EXIT_FRAMES, Math.max(1, durationInFrames - 2));
+  const outStart = Math.max(0, Math.min(enteredAt + holdFrames, durationInFrames - exitFrames - 2));
 
   const bar = spring({ frame: frame - ENTER_START, fps, config: { damping: 200 }, durationInFrames: 14 });
   const reveal = spring({
@@ -111,7 +113,7 @@ export const LowerThird: React.FC<LowerThirdProps> = ({ theme, accent, name, rol
     durationInFrames: ENTER_FRAMES,
   });
   const textIn = spring({ frame: frame - ENTER_START - 10, fps, config: { damping: 200 }, durationInFrames: 20 });
-  const out = spring({ frame: frame - outStart, fps, config: { damping: 200 }, durationInFrames: EXIT_FRAMES });
+  const out = spring({ frame: frame - outStart, fps, config: { damping: 200 }, durationInFrames: exitFrames });
 
   const show = reveal * (1 - out);
   const clipAmount = (1 - show) * 100;

@@ -85,9 +85,11 @@ export const CodeHighlightSteps: React.FC<CodeHighlightStepsProps> = ({
       const lines = parseLineRanges(s.lines).filter((n) => n <= lineCount);
       const first = lines.length > 0 ? lines[0] : 1;
       const last = lines.length > 0 ? lines[lines.length - 1] : 1;
-      const start = i === 0 ? FIRST_DELAY : t;
-      t += Math.max(1, s.durationInFrames);
-      return { start, set: new Set(lines), top: (first - 1) * lineHeight, height: (last - first + 1) * lineHeight, label: s.label };
+      const duration = Math.max(1, s.durationInFrames);
+      // Keep the entrance delay inside the first step's time window.
+      const start = t + (i === 0 ? Math.min(FIRST_DELAY, duration - 1) : 0);
+      t += duration;
+      return { start, duration: t - start, set: new Set(lines), top: (first - 1) * lineHeight, height: (last - first + 1) * lineHeight, label: s.label };
     });
   }, [steps, lineCount, lineHeight]);
 
@@ -97,7 +99,7 @@ export const CodeHighlightSteps: React.FC<CodeHighlightStepsProps> = ({
   }
   const cur = active >= 0 ? timeline[active] : undefined;
   const prev = active > 0 ? timeline[active - 1] : undefined;
-  const move = cur ? easeInOutCubic(progress(frame, cur.start, MOVE_FRAMES)) : 0;
+  const move = cur ? easeInOutCubic(progress(frame + 1, cur.start, Math.min(MOVE_FRAMES, cur.duration))) : 0;
 
   const bandTop = cur ? (prev ? lerp(prev.top, cur.top, move) : cur.top) : 0;
   const bandHeight = cur ? (prev ? lerp(prev.height, cur.height, move) : cur.height) : 0;
@@ -148,8 +150,8 @@ export const CodeHighlightSteps: React.FC<CodeHighlightStepsProps> = ({
         <div style={{ position: 'relative', width: 1040, height: 56 }}>
           {timeline.map((step, i) => {
             const next = timeline[i + 1];
-            const fadeIn = easeOutCubic(progress(frame, step.start, 12));
-            const fadeOut = next ? easeOutCubic(progress(frame, next.start, 10)) : 0;
+            const fadeIn = easeOutCubic(progress(frame + 1, step.start, Math.min(12, step.duration)));
+            const fadeOut = next ? easeOutCubic(progress(frame + 1, next.start, Math.min(10, next.duration))) : 0;
             const o = fadeIn * (1 - fadeOut);
             if (o <= 0.001) return null;
             return (

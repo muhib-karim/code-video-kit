@@ -12,14 +12,14 @@ export interface Cue {
   endSec: number;
 }
 
-/** Converts a frame index to seconds. */
+/** Converts a frame index to seconds. Returns 0 for a non-positive or non-finite fps. */
 export function frameToSec(frame: number, fps: number): number {
-  return frame / fps;
+  return fps > 0 && Number.isFinite(fps) ? frame / fps : 0;
 }
 
-/** Converts seconds to the nearest frame index. */
+/** Converts seconds to the nearest frame index. Returns 0 for an invalid fps. */
 export function secToFrame(sec: number, fps: number): number {
-  return Math.round(sec * fps);
+  return fps > 0 && Number.isFinite(fps) ? Math.round(sec * fps) : 0;
 }
 
 /**

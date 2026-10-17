@@ -327,6 +327,7 @@ h1 {
 }
 .play {
   position: absolute;
+  z-index: 1;
   right: var(--s-3);
   bottom: var(--s-3);
   display: inline-flex;

@@ -25,6 +25,13 @@ describe('frame/second conversion', () => {
     expect(secToFrame(1.5, 30)).toBe(45);
     expect(secToFrame(0.51, 30)).toBe(15);
   });
+  it('returns zero for an invalid frame rate', () => {
+    for (const fps of [0, -30, NaN, Infinity]) {
+      expect(frameToSec(0, fps)).toBe(0);
+      expect(frameToSec(30, fps)).toBe(0);
+      expect(secToFrame(1, fps)).toBe(0);
+    }
+  });
 });
 
 describe('activeWordIndex', () => {

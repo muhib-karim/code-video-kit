@@ -17,6 +17,10 @@ describe('parseLineRanges', () => {
     expect(parseLineRanges('a, 0, 2-x, 2')).toEqual([2]);
     expect(parseLineRanges('')).toEqual([]);
   });
+  it('ignores unsafe numeric endpoints instead of entering a non-advancing loop', () => {
+    expect(parseLineRanges('9007199254740992,1-9007199254740992,2')).toEqual([2]);
+    expect(parseLineRanges('9'.repeat(400))).toEqual([]);
+  });
 });
 
 describe('parseUnifiedDiff', () => {
@@ -29,6 +33,23 @@ describe('parseUnifiedDiff', () => {
   });
   it('treats unmarked lines as context', () => {
     expect(parseUnifiedDiff('plain')[0].type).toBe('context');
+  });
+  it('preserves changed lines that resemble headers inside a hunk', () => {
+    const lines = parseUnifiedDiff('@@ -1 +1 @@\n--- removed\n+++ added\n\\ No newline at end of file');
+    expect(lines).toEqual([
+      { type: 'remove', text: '-- removed', oldNumber: 1 },
+      { type: 'add', text: '++ added', newNumber: 1 },
+    ]);
+  });
+  it('skips git metadata and resets header handling for each file', () => {
+    const lines = parseUnifiedDiff([
+      'diff --git a/a.ts b/a.ts', 'index 1234567..7654321 100644',
+      '--- a/a.ts', '+++ b/a.ts', '@@ -1 +1 @@', '-old', '+new',
+      'diff --git a/b.ts b/b.ts', '--- a/b.ts', '+++ b/b.ts',
+      '@@ -5 +5 @@', ' keep',
+    ].join('\n'));
+    expect(lines.map((l) => l.text)).toEqual(['old', 'new', 'keep']);
+    expect(lines[2]).toEqual({ type: 'context', text: 'keep', oldNumber: 5, newNumber: 5 });
   });
 });
 
@@ -60,6 +81,10 @@ describe('chart helpers', () => {
 });
 
 describe('buildTree', () => {
+  it('promotes an existing path when a later entry explicitly marks a directory', () => {
+    const rows = buildTree([{ path: 'cache' }, { path: 'cache/', highlight: true }]);
+    expect(rows).toEqual([{ name: 'cache', path: 'cache', depth: 0, isDir: true, highlight: true, note: undefined }]);
+  });
   it('nests paths with directories first', () => {
     const rows = buildTree([
       { path: 'src/index.ts' },
@@ -95,6 +120,11 @@ describe('math helpers', () => {
     expect(formatNumber(999)).toBe('999');
     expect(formatNumber(-1234)).toBe('-1,234');
     expect(formatNumber(-0.0001, 2)).toBe('0.00');
+  });
+  it('clamps precision to the range supported by toFixed', () => {
+    expect(formatNumber(1, 101)).toBe(`1.${'0'.repeat(100)}`);
+    expect(formatNumber(1, Infinity)).toBe(`1.${'0'.repeat(100)}`);
+    expect(formatNumber(1.5, NaN)).toBe('2');
   });
 });
 

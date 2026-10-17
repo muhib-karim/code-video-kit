@@ -48,16 +48,22 @@ jobs:
       - name: Pack
         id: pack
         run: |
-          npm pack --ignore-scripts
-          TGZ=$(ls code-video-kit-*.tgz | head -n 1)
+          npm pack --ignore-scripts --json > pack-result.json
+          TGZ=$(node -p "require('./pack-result.json')[0].filename")
+          test -f "$TGZ"
           echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
 
       - name: Extract release notes from CHANGELOG
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           awk -v v="$VERSION" '
-            $0 ~ "^## \\[?" v "\\]?" { found=1; next }
-            found && /^## / { exit }
+            /^## / {
+              if (found) exit
+              heading=$2
+              gsub(/^\[|\]$/, "", heading)
+              if (heading == v) found=1
+              next
+            }
             found { print }
           ' CHANGELOG.md > RELEASE_NOTES.md
           {

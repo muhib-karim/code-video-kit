@@ -20,7 +20,7 @@ export const benchmarkBarsSchema = z.object({
     .array(
       z.object({
         label: z.string().describe('Name of the contender, shown left of its bar. Keep it under ~16 characters.'),
-        value: z.number().min(0).describe('Measured value in `unit`. Bar length is always proportional to it.'),
+        value: z.number().finite().min(0).describe('Measured value in `unit`. Bar length is always proportional to it.'),
         highlight: z
           .boolean()
           .optional()
@@ -92,13 +92,13 @@ export const BenchmarkBars: React.FC<BenchmarkBarsProps> = ({
   let multiplier = 0;
   if (showMultiplier && heroIndex >= 0) {
     const heroValue = items[heroIndex]?.value ?? 0;
-    const others = items.filter((it, i) => i !== heroIndex && it.value > 0).map((it) => it.value);
+    const others = items.filter((it, i) => i !== heroIndex && it.value >= 0).map((it) => it.value);
     if (others.length > 0) {
       const baseline = lowerIsBetter ? Math.min(...others) : Math.max(...others);
       multiplier = speedup(heroValue, baseline, lowerIsBetter);
     }
   }
-  const showPill = multiplier >= 1;
+  const showPill = multiplier > 1;
   const pillText = `${formatNumber(multiplier, multiplier >= 10 ? 0 : 1)}× faster`;
 
   const padX = 96;

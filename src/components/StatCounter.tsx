@@ -14,7 +14,7 @@ export const statCounterSchema = z.object({
     .array(
       z.object({
         label: z.string().describe('Caption under the number, e.g. "GitHub stars". Keep it short (1-3 words).'),
-        value: z.number().describe('Final value the counter counts up to from 0.'),
+        value: z.number().finite().describe('Final value the counter counts up to from 0.'),
         prefix: z.string().optional().describe('Text before the number, e.g. "$". Omit for none.'),
         suffix: z.string().optional().describe('Text after the number, e.g. "%", "k+" or "×". Omit for none.'),
         decimals: z

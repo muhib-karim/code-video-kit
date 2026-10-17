@@ -29,7 +29,8 @@ export function easeInOutCubic(t: number): number {
  * `formatNumber(12345.678, 1)` -> "12,345.7".
  */
 export function formatNumber(value: number, decimals = 0): string {
-  const fixed = Math.abs(value).toFixed(Math.max(0, decimals));
+  const precision = Math.min(100, Math.max(0, Math.trunc(decimals) || 0));
+  const fixed = Math.abs(value).toFixed(precision);
   const [int, frac] = fixed.split('.');
   const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const sign = value < 0 && Number(fixed) !== 0 ? '-' : '';

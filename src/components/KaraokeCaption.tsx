@@ -7,8 +7,8 @@ import { activePageIndex, activeWordIndex, frameToSec, paginateWords, wordProgre
 
 const timedWordSchema = z.object({
   text: z.string().describe('The word as displayed, including any trailing punctuation.'),
-  startSec: z.number().min(0).describe('Time in seconds when the word starts being spoken (fill begins).'),
-  endSec: z.number().min(0).describe('Time in seconds when the word ends (fill complete). Should be >= startSec.'),
+  startSec: z.number().finite().min(0).describe('Time in seconds when the word starts being spoken (fill begins).'),
+  endSec: z.number().finite().min(0).describe('Time in seconds when the word ends (fill complete). Should be >= startSec.'),
 });
 
 export const karaokeCaptionSchema = z.object({

@@ -110,6 +110,7 @@
 
   // ---------- video playback ----------
   var playing = null;
+  var playAttempt = 0;
 
   function ensureVideo(media) {
     var video = media.querySelector('video');
@@ -125,8 +126,7 @@
     video.muted = true;
     video.src = media.getAttribute('data-src');
     video.addEventListener('error', function () {
-      media.setAttribute('data-playing', 'false');
-      media.setAttribute('aria-pressed', 'false');
+      if (playing === media) stop(media);
     });
     media.appendChild(video);
     return video;
@@ -135,8 +135,11 @@
   function play(media) {
     if (playing && playing !== media) stop(playing);
     var video = ensureVideo(media);
+    var attempt = ++playAttempt;
     var p = video.play();
-    if (p && p.catch) p.catch(function () {});
+    if (p && p.catch) p.catch(function () {
+      if (attempt === playAttempt && playing === media) stop(media);
+    });
     media.setAttribute('data-playing', 'true');
     media.setAttribute('aria-pressed', 'true');
     media.querySelector('.play-label').textContent = 'Pause';
@@ -152,7 +155,10 @@
     media.setAttribute('data-playing', 'false');
     media.setAttribute('aria-pressed', 'false');
     media.querySelector('.play-label').textContent = 'Play';
-    if (playing === media) playing = null;
+    if (playing === media) {
+      playAttempt++;
+      playing = null;
+    }
   }
 
   // ---------- rendering ----------

@@ -96,6 +96,8 @@ export function utf8Bytes(text: string): number[] {
   const out: number[] = [];
   for (const ch of text) {
     let cp = ch.codePointAt(0) as number;
+    // Iteration combines valid pairs, but unpaired UTF-16 surrogates remain.
+    if (cp >= 0xd800 && cp <= 0xdfff) cp = 0xfffd;
     if (cp < 0x80) out.push(cp);
     else if (cp < 0x800) out.push(0xc0 | (cp >> 6), 0x80 | (cp & 63));
     else if (cp < 0x10000) out.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
@@ -126,7 +128,7 @@ export interface QRCode {
 
 /**
  * Encodes `text` as a QR code. Throws if the text does not fit in version 10
- * at the requested error-correction level (roughly 270 bytes at "M").
+ * at the requested error-correction level (213 bytes at "M").
  */
 export function encodeQR(text: string, ecl: ErrorCorrectionLevel = 'M'): QRCode {
   const bytes = utf8Bytes(text);

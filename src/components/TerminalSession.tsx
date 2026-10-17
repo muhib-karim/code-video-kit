@@ -87,7 +87,7 @@ function buildRows(
     const typeEnd = typeStart + Math.ceil(c.command.length / speed);
     const runAt = typeEnd + ENTER_DELAY;
     rows.push({ kind: 'command', text: c.command, appear, typeStart, typeEnd, cursorUntil: runAt });
-    let last = typeEnd;
+    let last = runAt;
     c.output.forEach((line, j) => {
       const at = runAt + j * OUTPUT_STEP;
       rows.push({ kind: 'output', text: line, appear: at, typeStart: at, typeEnd: at, cursorUntil: at });

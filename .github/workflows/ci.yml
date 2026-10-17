@@ -45,8 +45,9 @@ jobs:
       - name: Pack
         id: pack
         run: |
-          npm pack --ignore-scripts
-          TGZ=$(ls code-video-kit-*.tgz | head -n 1)
+          npm pack --ignore-scripts --json > pack-result.json
+          TGZ=$(node -p "require('./pack-result.json')[0].filename")
+          test -f "$TGZ"
           echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
           echo "Packed $TGZ" >> "$GITHUB_STEP_SUMMARY"
           tar -tzf "$TGZ" | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"

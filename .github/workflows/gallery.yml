@@ -35,6 +35,12 @@ jobs:
       - name: Install
         run: npm install --no-audit --no-fund
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
       - name: Ensure headless browser for Remotion
         run: npx remotion browser ensure
 
@@ -47,12 +53,15 @@ jobs:
       - name: Render all compositions (timed)
         run: node scripts/render-all.mjs
 
-      - name: Copy media and measurements into the site
+      - name: Copy measurements into the site
+        run: cp results/render-times.json gallery/render-times.json
+
+      - name: Summarize render results
+        if: always()
         run: |
-          mkdir -p gallery/media
-          ls -1 gallery/media | wc -l | xargs echo "media files:"
-          cp results/render-times.json gallery/render-times.json
-          cat results/render-times.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -f results/render-times.md ]; then
+            cat results/render-times.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload render times
         if: always()
