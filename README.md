@@ -1,3 +1,11 @@
+<p align="center">
+  <img src=".github/assets/banner.png" alt="code-video-kit: 34 typed Remotion components for code and data videos" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/muhib-karim/code-video-kit/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/muhib-karim/code-video-kit"></a>
+</p>
+
 <h1 align="center">code-video-kit</h1>
 
 <p align="center"><strong>34 code-first Remotion components for launch videos, benchmark explainers and coding tutorials.</strong></p>
@@ -252,6 +260,16 @@ gallery/          static gallery (HTML, CSS, JS; no dependencies)
 ```
 
 CI runs on every push and pull request: install, typecheck, test, build, `npm pack` (the tarball is uploaded as an artifact). The gallery workflow deploys to GitHub Pages on every push to `main`; enable it once under **Settings → Pages → Source: GitHub Actions**. To release, bump `version` in `package.json`, add a `CHANGELOG.md` entry and push a tag `vX.Y.Z`. The release workflow attaches the tarball to a GitHub Release.
+
+## Tech stack
+
+- **Components:** React, Remotion, TypeScript
+- **Build:** tsup (ESM + .d.ts), vitest, `tsc --noEmit`
+- **Gallery:** rendered with Remotion on GitHub Actions, published to GitHub Pages
+
+## Contributing
+
+Issues and pull requests are welcome. Run `npm run typecheck && npm test` (see [Development](#development)) before opening a pull request. Please keep each pull request focused and say how you tested it.
 
 ## License
 
