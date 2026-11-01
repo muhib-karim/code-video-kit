@@ -51,7 +51,6 @@ jobs:
           npm pack --ignore-scripts
           TGZ=$(node -p "const p=require('./package.json'); p.name.replace('@','').replace('/','-') + '-' + p.version + '.tgz'")
           test -f "$TGZ"
-          test -f "$TGZ"
           echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
 
       - name: Extract release notes from CHANGELOG
