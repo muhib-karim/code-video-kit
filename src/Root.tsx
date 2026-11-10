@@ -8,6 +8,8 @@ import { registry } from './registry';
 // each entry's schema still validates its props at runtime in the Studio.
 const LooseComposition = Composition as unknown as React.FC<{
   id: string;
+  // Same heterogeneous registry as RegistryEntry.component.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: React.ComponentType<any>;
   schema: AnyZodObject;
   defaultProps: Record<string, unknown>;

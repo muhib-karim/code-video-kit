@@ -55,7 +55,11 @@
     };
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(done, function () {
-        fallbackCopy(text) ? done() : announce('Copy failed, select the text manually');
+        if (fallbackCopy(text)) {
+          done();
+        } else {
+          announce('Copy failed, select the text manually');
+        }
       });
     } else if (fallbackCopy(text)) {
       done();
@@ -71,7 +75,7 @@
     area.style.opacity = '0';
     document.body.appendChild(area);
     area.select();
-    var ok = false;
+    var ok;
     try {
       ok = document.execCommand('copy');
     } catch (e) {
