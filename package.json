@@ -42,6 +42,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "tsup",
@@ -56,17 +57,23 @@
     "zod": "^3.22.3"
   },
   "devDependencies": {
-    "@remotion/bundler": "4.0.290",
-    "@remotion/cli": "4.0.290",
-    "@remotion/renderer": "4.0.290",
+    "@eslint/js": "10.0.1",
+    "@remotion/bundler": "4.0.542",
+    "@remotion/cli": "4.0.542",
+    "@remotion/renderer": "4.0.542",
     "@types/node": "20.17.10",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
+    "jsqr": "1.4.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "remotion": "4.0.290",
-    "tsup": "8.3.5",
+    "remotion": "4.0.542",
+    "tsup": "8.5.1",
     "typescript": "5.6.3",
+    "typescript-eslint": "8.72.2",
     "vitest": "2.1.9",
     "zod": "3.22.3"
   },

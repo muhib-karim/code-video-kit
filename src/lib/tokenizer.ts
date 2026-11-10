@@ -101,7 +101,10 @@ const bashWord: Classifier = (word, _code, _end, state) => {
   return 'plain';
 };
 
-const NUMBER = /\b(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?n?)\b/y;
+// Hex, binary and octal (optionally BigInt), then decimals with an optional
+// BigInt "n" or Python complex "j" suffix.
+const NUMBER =
+  /\b(?:(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+)n?|\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?[nj]?)\b/y;
 
 const RULES: Record<Language, Rule[]> = {
   ts: [
@@ -112,7 +115,7 @@ const RULES: Record<Language, Rule[]> = {
     { re: /"(?:\\.|[^"\\\n])*"?/y, type: 'string' },
     { re: /'(?:\\.|[^'\\\n])*'?/y, type: 'string' },
     { re: NUMBER, type: 'number' },
-    { re: /[A-Za-z_$][\w$]*/y, type: tsIdentifier },
+    { re: /[\p{ID_Start}_$][\p{ID_Continue}$\u200c\u200d]*/yu, type: tsIdentifier },
     { re: /=>|[+\-*/%=<>!&|^~?:]+/y, type: 'operator' },
     { re: /[{}()[\];,.@]/y, type: 'punctuation' },
   ],
@@ -123,16 +126,17 @@ const RULES: Record<Language, Rule[]> = {
     { re: /(?:[rRbBfFuU]{1,2})?(?:"""[\s\S]*?(?:"""|$)|'''[\s\S]*?(?:'''|$))/y, type: 'string' },
     { re: /(?:[rRbBfFuU]{1,2})?"(?:\\.|[^"\\\n])*"?/y, type: 'string' },
     { re: /(?:[rRbBfFuU]{1,2})?'(?:\\.|[^'\\\n])*'?/y, type: 'string' },
-    { re: /@[A-Za-z_][\w.]*/y, type: 'function' },
+    { re: /@[\p{ID_Start}_][\p{ID_Continue}.]*/yu, type: 'function' },
     { re: NUMBER, type: 'number' },
-    { re: /[A-Za-z_][\w]*/y, type: pyIdentifier },
+    { re: /[\p{ID_Start}_]\p{ID_Continue}*/yu, type: pyIdentifier },
     { re: /->|[+\-*/%=<>!&|^~:]+/y, type: 'operator' },
     { re: /[{}()[\];,.]/y, type: 'punctuation' },
   ],
   bash: [
     { re: /\s+/y, type: 'plain' },
     { re: /#[^\n]*/y, type: 'comment', guard: afterSpaceOrStart },
-    { re: /"(?:\\.|[^"\\])*"?/y, type: 'string' },
+    // "\\[\s\S]" so a backslash-newline inside the quotes stays in the string.
+    { re: /"(?:\\[\s\S]|[^"\\])*"?/y, type: 'string' },
     { re: /'[^']*'?/y, type: 'string' },
     { re: /\$\{[^}\n]*\}?|\$[A-Za-z_]\w*|\$[0-9@#?$!*-]/y, type: 'type' },
     { re: /--?[A-Za-z0-9][\w-]*(?:=[^\s;|&]*)?/y, type: 'operator', guard: afterSpaceOrStart },
@@ -144,6 +148,17 @@ const RULES: Record<Language, Rule[]> = {
   ],
 };
 RULES.js = RULES.ts;
+
+/**
+ * Bash: true when `whitespace` is the newline of a line continuation, i.e. it
+ * starts with a single newline that directly follows an unescaped backslash.
+ */
+function continuesLine(previous: readonly Token[], whitespace: string): boolean {
+  if (!/^\r?\n[^\n]*$/.test(whitespace)) return false;
+  let backslashes = 0;
+  for (let i = previous.length - 1; i >= 0 && previous[i].text === '\\'; i--) backslashes++;
+  return backslashes % 2 === 1;
+}
 
 /** Tokenizes `code` into lines of tokens. Always returns `code.split("\n").length` lines. */
 export function tokenize(code: string, language: Language = 'ts'): Token[][] {
@@ -167,7 +182,7 @@ export function tokenize(code: string, language: Language = 'ts'): Token[][] {
       const end = pos + text.length;
       const type = typeof rule.type === 'function' ? rule.type(text, code, end, state) : rule.type;
       if (language === 'bash') {
-        if (type === 'plain' && text.includes('\n')) state.expectCommand = true;
+        if (type === 'plain' && text.includes('\n') && !continuesLine(flat, text)) state.expectCommand = true;
         if (type === 'operator' && /^(?:&&|\|\||\||;)$/.test(text)) state.expectCommand = true;
         if (type === 'punctuation' && text === '$(') state.expectCommand = true;
       }
@@ -177,8 +192,11 @@ export function tokenize(code: string, language: Language = 'ts'): Token[][] {
       break;
     }
     if (!matched) {
-      push('plain', code[pos]);
-      pos += 1;
+      // Take a whole code point so an astral character is never split into
+      // two lone surrogates (an unpaired surrogate is still one unit).
+      const ch = String.fromCodePoint(code.codePointAt(pos) as number);
+      push('plain', ch);
+      pos += ch.length;
     }
   }
 

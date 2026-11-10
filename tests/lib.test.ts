@@ -5,6 +5,7 @@ import { buildLinePath, niceMax, pathLength, scalePoints, speedup } from '../src
 import { buildTree } from '../src/lib/fileTree';
 import { clamp, formatNumber, lerp, progress } from '../src/lib/math';
 import { resolveTheme, withAlpha, readableOn } from '../src/theme';
+import { sliceChars } from '../src/internal/text';
 
 describe('parseLineRanges', () => {
   it('parses single lines and ranges', () => {
@@ -20,6 +21,14 @@ describe('parseLineRanges', () => {
   it('ignores unsafe numeric endpoints instead of entering a non-advancing loop', () => {
     expect(parseLineRanges('9007199254740992,1-9007199254740992,2')).toEqual([2]);
     expect(parseLineRanges('9'.repeat(400))).toEqual([]);
+  });
+  it('caps the expansion so a mistyped range cannot hang or crash a render', () => {
+    const lines = parseLineRanges('1-20000000');
+    expect(lines).toHaveLength(100000);
+    expect(lines[0]).toBe(1);
+    expect(lines[lines.length - 1]).toBe(100000);
+    expect(parseLineRanges('99999999')).toEqual([]);
+    expect(parseLineRanges('99998-100003, 7')).toEqual([7, 99998, 99999, 100000]);
   });
 });
 
@@ -50,6 +59,29 @@ describe('parseUnifiedDiff', () => {
     ].join('\n'));
     expect(lines.map((l) => l.text)).toEqual(['old', 'new', 'keep']);
     expect(lines[2]).toEqual({ type: 'context', text: 'keep', oldNumber: 5, newNumber: 5 });
+  });
+  it('keeps changed lines that only look like file headers in a header-less diff', () => {
+    const lines = parseUnifiedDiff(' SELECT 1;\n--- old comment\n+-- new comment\n+++ counter;');
+    expect(lines).toEqual([
+      { type: 'context', text: 'SELECT 1;', oldNumber: 1, newNumber: 1 },
+      { type: 'remove', text: '-- old comment', oldNumber: 2 },
+      { type: 'add', text: '-- new comment', newNumber: 2 },
+      { type: 'add', text: '++ counter;', newNumber: 3 },
+    ]);
+  });
+  it('still skips a ---/+++ header pair that has no hunk header', () => {
+    expect(parseUnifiedDiff('--- a/x.ts\n+++ b/x.ts\n-old\n+new').map((l) => l.text)).toEqual(['old', 'new']);
+  });
+  it('skips every git metadata line between "diff --git" and the first hunk', () => {
+    const lines = parseUnifiedDiff([
+      'diff --git a/new.ts b/new.ts', 'new file mode 100644', 'index 0000000..1234567',
+      '--- /dev/null', '+++ b/new.ts', '@@ -0,0 +1 @@', '+hello',
+      'diff --git a/old.png b/old.png', 'deleted file mode 100644', 'Binary files a/old.png and /dev/null differ',
+    ].join('\n'));
+    expect(lines).toEqual([{ type: 'add', text: 'hello', newNumber: 1 }]);
+  });
+  it('does not mistake an unmarked code line starting with "index " for git metadata', () => {
+    expect(parseUnifiedDiff('index = 0;\n+index += 1;').map((l) => l.text)).toEqual(['index = 0;', 'index += 1;']);
   });
 });
 
@@ -142,5 +174,65 @@ describe('theme', () => {
   it('readableOn picks contrasting text', () => {
     expect(readableOn('#ffffff')).toBe('#0B0D12');
     expect(readableOn('#000000')).toBe('#FFFFFF');
+  });
+});
+
+describe('sliceChars', () => {
+  it('slices like String.slice for BMP text', () => {
+    expect(sliceChars('hello', 0)).toBe('');
+    expect(sliceChars('hello', 2)).toBe('he');
+    expect(sliceChars('hello', 99)).toBe('hello');
+  });
+  it('never ends between the halves of a surrogate pair', () => {
+    expect(sliceChars('a😀b', 1)).toBe('a');
+    expect(sliceChars('a😀b', 2)).toBe('a');
+    expect(sliceChars('a😀b', 3)).toBe('a😀');
+    expect(sliceChars('a😀b', 4)).toBe('a😀b');
+  });
+  it('tolerates negative, fractional and non-finite counts', () => {
+    expect(sliceChars('abc', -1)).toBe('');
+    expect(sliceChars('abc', 1.9)).toBe('a');
+    expect(sliceChars('abc', NaN)).toBe('');
+    expect(sliceChars('abc', Infinity)).toBe('abc');
+  });
+});
+
+describe('edge cases: empty input, zero spans, non-positive durations', () => {
+  it('progress is a step for zero and negative durations', () => {
+    expect(progress(10, 10, 0)).toBe(1);
+    expect(progress(9, 10, -5)).toBe(0);
+    expect(progress(11, 10, -5)).toBe(1);
+  });
+  it('scalePoints handles no points, one point and a flat series', () => {
+    expect(scalePoints([], 200, 100, 0, 1)).toEqual([]);
+    expect(scalePoints([5], 200, 100, 0, 10)).toEqual([{ x: 0, y: 50 }]);
+    expect(scalePoints([3, 3], 200, 100, 3, 3)).toEqual([
+      { x: 0, y: 100 },
+      { x: 200, y: 100 },
+    ]);
+  });
+  it('line helpers accept empty and single-point input', () => {
+    expect(buildLinePath([])).toBe('');
+    expect(pathLength([])).toBe(0);
+    expect(pathLength([{ x: 1, y: 1 }])).toBe(0);
+  });
+  it('niceMax falls back to 1 for non-positive or NaN input and handles fractions', () => {
+    expect(niceMax(-5)).toBe(1);
+    expect(niceMax(NaN)).toBe(1);
+    expect(niceMax(0.3)).toBe(0.5);
+    expect(niceMax(1000)).toBe(1000);
+  });
+  it('speedup is 0 when either side is not positive', () => {
+    expect(speedup(10, 0, true)).toBe(0);
+    expect(speedup(-1, 10, false)).toBe(0);
+    expect(speedup(NaN, 10, false)).toBe(0);
+  });
+  it('buildTree ignores empty paths and repeated slashes', () => {
+    expect(buildTree([])).toEqual([]);
+    expect(buildTree([{ path: '' }, { path: '/' }, { path: 'a//b' }]).map((r) => r.path)).toEqual(['a', 'a/b']);
+  });
+  it('parseUnifiedDiff returns no lines for empty input', () => {
+    expect(parseUnifiedDiff('')).toEqual([]);
+    expect(parseUnifiedDiff('\n')).toEqual([{ type: 'context', text: '', oldNumber: 1, newNumber: 1 }]);
   });
 });

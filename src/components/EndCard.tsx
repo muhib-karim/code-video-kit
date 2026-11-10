@@ -3,6 +3,7 @@ import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } fr
 import { z } from 'zod';
 import { baseThemeDefaults, baseThemeSchema, fonts, radii, resolveTheme, withAlpha } from '../theme';
 import { Backdrop } from '../internal/ui';
+import { sliceChars } from '../internal/text';
 
 export const endCardSchema = z.object({
   ...baseThemeSchema,
@@ -106,7 +107,7 @@ export const EndCard: React.FC<EndCardProps> = ({ theme, accent, title, command,
           >
             <span style={{ color: p.accent, fontWeight: 700 }}>$</span>
             <span style={{ width: `${command.length + 1}ch`, textAlign: 'left', whiteSpace: 'pre', color: p.text }}>
-              {command.slice(0, typed)}
+              {sliceChars(command, typed)}
               <span
                 style={{
                   display: 'inline-block',

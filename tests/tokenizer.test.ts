@@ -96,3 +96,62 @@ describe('tokenize: bash', () => {
     expect(l.flat().some((t) => t.type === 'comment')).toBe(false);
   });
 });
+
+describe('tokenize: bash line continuations', () => {
+  it('keeps arguments after a backslash-newline out of command position', () => {
+    const l = tokenize('curl -sS \\\n  https://example.com/api \\\n  -o out.json', 'bash');
+    expect(find(l, 'curl')?.type).toBe('function');
+    expect(find(l, 'https://example.com/api')?.type).toBe('plain');
+    expect(find(l, 'out.json')?.type).toBe('plain');
+  });
+
+  it('still starts a new command after a plain newline, a blank line or an escaped backslash', () => {
+    expect(find(tokenize('echo a\nls', 'bash'), 'ls')?.type).toBe('function');
+    expect(find(tokenize('echo a \\\n\nls', 'bash'), 'ls')?.type).toBe('function');
+    expect(find(tokenize('echo a \\\\\nls', 'bash'), 'ls')?.type).toBe('function');
+  });
+
+  it('keeps a double-quoted string that spans a backslash-newline as one string', () => {
+    const code = 'echo "one \\\ntwo" && ls';
+    const l = tokenize(code, 'bash');
+    expect(join(l)).toBe(code);
+    expect(l[0].map((t) => t.type)).toEqual(['function', 'plain', 'string']);
+    expect(l[1][0]).toEqual({ type: 'string', text: 'two"' });
+    expect(find(l, 'ls')?.type).toBe('function');
+  });
+});
+
+describe('tokenize: unicode', () => {
+  const splitsPair = (t: Token) => /[\ud800-\udbff]$/.test(t.text) || /^[\udc00-\udfff]/.test(t.text);
+
+  it.each<Language>(['ts', 'js', 'py', 'bash'])('never splits a surrogate pair (%s)', (lang) => {
+    const code = '<p>Hi 👋</p> 𝑥 = 1 # 🚀';
+    const l = tokenize(code, lang);
+    expect(join(l)).toBe(code);
+    expect(l.flat().filter(splitsPair)).toEqual([]);
+  });
+
+  it('keeps an unpaired surrogate so the round trip stays exact', () => {
+    const code = 'a \ud83d b';
+    expect(join(tokenize(code, 'ts'))).toBe(code);
+  });
+
+  it('treats non-ASCII letters as part of identifiers', () => {
+    const ts = tokenize('const naïve = café(1);', 'ts');
+    expect(find(ts, 'naïve')?.type).toBe('plain');
+    expect(find(ts, 'café')?.type).toBe('function');
+    const py = tokenize('größe = länge(x)', 'py');
+    expect(find(py, 'größe')?.type).toBe('plain');
+    expect(find(py, 'länge')?.type).toBe('function');
+  });
+});
+
+describe('tokenize: number literals', () => {
+  it('colours octal, BigInt-suffixed and Python complex literals', () => {
+    expect(find(tokenize('const m = 0o17;', 'ts'), '0o17')?.type).toBe('number');
+    expect(find(tokenize('const big = 0xffn;', 'ts'), '0xffn')?.type).toBe('number');
+    const py = tokenize('os.chmod(p, 0o755); z = 3j', 'py');
+    expect(find(py, '0o755')?.type).toBe('number');
+    expect(find(py, '3j')?.type).toBe('number');
+  });
+});

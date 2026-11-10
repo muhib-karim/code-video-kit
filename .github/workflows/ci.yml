@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -16,22 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
+          cache: npm
 
-      # No lockfile is committed yet, so cache the npm download cache keyed on package.json.
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-node20-${{ hashFiles('package.json') }}
-          restore-keys: npm-${{ runner.os }}-node20-
+      - name: Install (from package-lock.json)
+        run: npm ci --no-audit --no-fund
 
-      - name: Install
-        run: npm install --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
 
       - name: Typecheck
         run: npm run typecheck
@@ -41,6 +38,10 @@ jobs:
 
       - name: Build (tsup, ESM + d.ts)
         run: npm run build
+
+      # Dev-only tooling is audited separately; this gates what consumers install.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Pack
         id: pack
@@ -53,8 +54,26 @@ jobs:
           tar -tzf "$TGZ" | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: code-video-kit-package
           path: ${{ steps.pack.outputs.tgz }}
           if-no-files-found: error
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Report in the job summary only, so the token can stay read-only.
+          GITLEAKS_ENABLE_COMMENTS: false

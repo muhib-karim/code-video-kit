@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { baseThemeDefaults, baseThemeSchema, fonts, resolveTheme, withAlpha } from '../theme';
 import { Backdrop, WindowChrome } from '../internal/ui';
 import { clamp, progress } from '../lib/math';
+import { sliceChars } from '../internal/text';
 
 export const terminalSessionSchema = z.object({
   ...baseThemeSchema,
@@ -129,7 +130,7 @@ export const TerminalSession: React.FC<TerminalSessionProps> = ({
 
   const renderPromptRow = (row: Row, key: number) => {
     const typedCount = clamp(Math.floor((frame - row.typeStart) * speed), 0, row.text.length);
-    const typed = row.text.slice(0, typedCount);
+    const typed = sliceChars(row.text, typedCount);
     const hasCursor = frame < row.cursorUntil;
     const isTyping = frame >= row.typeStart && frame < row.typeEnd;
     return (

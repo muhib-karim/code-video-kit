@@ -14,7 +14,11 @@ export const codeHighlightStepsSchema = z.object({
   steps: z
     .array(
       z.object({
-        lines: z.string().describe('1-based lines to focus in this step, e.g. "2-4" or "3,5". Other lines dim.'),
+        lines: z
+          .string()
+          .describe(
+            '1-based lines to focus in this step, e.g. "2-4" or "3,5". Other lines dim. An empty string (or lines past the end of the code) shows the caption with no highlight.',
+          ),
         label: z.string().describe('Caption shown in the pill under the window while this step is active. Keep under ~60 chars.'),
         durationInFrames: z.number().int().min(1).describe('How long this step stays on screen, in frames.'),
       }),
@@ -89,7 +93,16 @@ export const CodeHighlightSteps: React.FC<CodeHighlightStepsProps> = ({
       // Keep the entrance delay inside the first step's time window.
       const start = t + (i === 0 ? Math.min(FIRST_DELAY, duration - 1) : 0);
       t += duration;
-      return { start, duration: t - start, set: new Set(lines), top: (first - 1) * lineHeight, height: (last - first + 1) * lineHeight, label: s.label };
+      return {
+        start,
+        duration: t - start,
+        set: new Set(lines),
+        // A step with no valid lines is a caption-only step: no band, nothing dimmed.
+        empty: lines.length === 0,
+        top: (first - 1) * lineHeight,
+        height: (last - first + 1) * lineHeight,
+        label: s.label,
+      };
     });
   }, [steps, lineCount, lineHeight]);
 
@@ -101,15 +114,19 @@ export const CodeHighlightSteps: React.FC<CodeHighlightStepsProps> = ({
   const prev = active > 0 ? timeline[active - 1] : undefined;
   const move = cur ? easeInOutCubic(progress(frame + 1, cur.start, Math.min(MOVE_FRAMES, cur.duration))) : 0;
 
-  const bandTop = cur ? (prev ? lerp(prev.top, cur.top, move) : cur.top) : 0;
-  const bandHeight = cur ? (prev ? lerp(prev.height, cur.height, move) : cur.height) : 0;
-  const bandOpacity = cur ? (prev ? 1 : move) : 0;
+  // The band glides between two steps that both have lines, fades in when
+  // only the current one does and fades out when only the previous one did.
+  const curBand = cur && !cur.empty ? cur : undefined;
+  const prevBand = prev && !prev.empty ? prev : undefined;
+  const bandAt = curBand ?? prevBand;
+  const bandTop = curBand && prevBand ? lerp(prevBand.top, curBand.top, move) : (bandAt?.top ?? 0);
+  const bandHeight = curBand && prevBand ? lerp(prevBand.height, curBand.height, move) : (bandAt?.height ?? 0);
+  const bandOpacity = curBand ? (prevBand ? 1 : move) : prevBand ? 1 - move : 0;
 
   const lineOpacity = (i: number): number => {
     if (!cur) return 1;
-    const target = cur.set.has(i + 1) ? 1 : DIM;
-    const from = prev ? (prev.set.has(i + 1) ? 1 : DIM) : 1;
-    return lerp(from, target, move);
+    const level = (step: typeof cur): number => (step.empty || step.set.has(i + 1) ? 1 : DIM);
+    return lerp(prev ? level(prev) : 1, level(cur), move);
   };
 
   return (

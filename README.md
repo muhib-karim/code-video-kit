@@ -32,7 +32,7 @@ Every component is a plain React component driven by the current frame. Each one
 - **Built for code.** A built-in tokenizer for TypeScript/JavaScript, Python and Bash; typing, diffs, step-through highlights, terminals.
 - **Built for data.** Bar races, benchmark bars and line charts with a colour-vision-safe categorical palette, tabular numerals and direct labels.
 - **Composable.** Drop any component into a `<Sequence>`. Frames, transitions and the spotlight accept your own `children`.
-- **Tested logic.** Tokenizer, caption timing, bar-race interpolation, chart paths, diff parsing and the QR encoder are pure functions with unit tests.
+- **Tested logic.** Tokenizer, caption timing, bar-race interpolation, chart paths, diff parsing and the QR encoder are pure functions with unit tests. Every component is render-tested at several frames, and QR symbols are scanned back by an independent decoder.
 
 ## What's inside
 
@@ -155,11 +155,13 @@ Each component is meant to be configured by a person or by a script that writes 
 
 ```ts
 import { registry } from 'code-video-kit';
+import type { ZodTypeAny } from 'zod';
 
 // List every component, its recommended duration and the documented props.
 for (const entry of registry) {
   console.log(`${entry.name} (${entry.id}, ${entry.durationInFrames} frames): ${entry.description}`);
-  for (const [prop, field] of Object.entries(entry.schema.shape)) {
+  const shape: Record<string, ZodTypeAny> = entry.schema.shape;
+  for (const [prop, field] of Object.entries(shape)) {
     console.log(`  ${prop}: ${field.description ?? ''}`);
   }
 }
@@ -235,8 +237,9 @@ The gallery workflow renders every composition on a GitHub-hosted runner (h264, 
 ## Development
 
 ```bash
-npm install            # also builds dist/ via the prepare script
+npm ci                 # exact install from package-lock.json; also builds dist/ via the prepare script
 npm run studio         # open Remotion Studio with every component
+npm run lint           # eslint (flat config in eslint.config.js)
 npm run typecheck      # tsc --noEmit
 npm test               # vitest
 npm run build          # tsup -> dist/ (ESM + .d.ts)
@@ -244,7 +247,7 @@ npm run emit:registry  # dist registry -> gallery/registry.json
 npm run render:all     # render gallery/media/*.mp4 + posters, write results/render-times.*
 ```
 
-Serve `gallery/` with any static file server to preview the gallery locally.
+Serve `gallery/` with any static file server to preview the gallery locally. Development needs Node 20.19 or newer (CI uses Node 22); the published package itself supports Node 18+.
 
 Repository layout:
 
@@ -259,17 +262,19 @@ scripts/          render-all.mjs, emit-registry.mjs
 gallery/          static gallery (HTML, CSS, JS; no dependencies)
 ```
 
-CI runs on every push and pull request: install, typecheck, test, build, `npm pack` (the tarball is uploaded as an artifact). The gallery workflow deploys to GitHub Pages on every push to `main`; enable it once under **Settings → Pages → Source: GitHub Actions**. To release, bump `version` in `package.json`, add a `CHANGELOG.md` entry and push a tag `vX.Y.Z`. The release workflow attaches the tarball to a GitHub Release.
+CI runs on pull requests and on pushes to `main`: `npm ci` from the committed lockfile, lint, typecheck, test, build, `npm audit` for production dependencies and `npm pack` (the tarball is uploaded as an artifact). A second job scans the git history for secrets with gitleaks. The gallery workflow deploys to GitHub Pages on every push to `main`; enable it once under **Settings → Pages → Source: GitHub Actions**. Run it manually on any other branch to render every composition without publishing. To release, bump `version` in `package.json`, add a `CHANGELOG.md` entry and push a tag `vX.Y.Z`. The release workflow attaches the tarball to a GitHub Release.
 
 ## Tech stack
 
 - **Components:** React, Remotion, TypeScript
-- **Build:** tsup (ESM + .d.ts), vitest, `tsc --noEmit`
+- **Build:** tsup (ESM + .d.ts), vitest, ESLint, `tsc --noEmit`
 - **Gallery:** rendered with Remotion on GitHub Actions, published to GitHub Pages
+
+See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for how the pieces fit together.
 
 ## Contributing
 
-Issues and pull requests are welcome. Run `npm run typecheck && npm test` (see [Development](#development)) before opening a pull request. Please keep each pull request focused and say how you tested it.
+Issues and pull requests are welcome. Run `npm run lint && npm run typecheck && npm test` (see [Development](#development)) before opening a pull request. Please keep each pull request focused and say how you tested it.
 
 ## License
 

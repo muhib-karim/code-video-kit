@@ -38,10 +38,13 @@ export const kineticTitleDefaults: KineticTitleProps = {
   fontSize: 92,
 };
 
-/** Lowercases and strips non-alphanumerics so "Videos." matches "videos". */
+/**
+ * Lowercases and strips punctuation so "Videos." matches "videos". Letters,
+ * marks and digits of any script are kept, so "über" does not match "Ber".
+ */
 function normalizeWord(word: string): string {
-  const lower = word.toLowerCase();
-  const stripped = lower.replace(/[^a-z0-9]+/g, '');
+  const lower = word.normalize('NFC').toLowerCase();
+  const stripped = lower.replace(/[^\p{L}\p{M}\p{N}]+/gu, '');
   return stripped.length > 0 ? stripped : lower;
 }
 
