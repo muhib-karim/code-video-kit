@@ -22,6 +22,14 @@ describe('parseLineRanges', () => {
     expect(parseLineRanges('9007199254740992,1-9007199254740992,2')).toEqual([2]);
     expect(parseLineRanges('9'.repeat(400))).toEqual([]);
   });
+  it('caps the expansion so a mistyped range cannot hang or crash a render', () => {
+    const lines = parseLineRanges('1-20000000');
+    expect(lines).toHaveLength(100000);
+    expect(lines[0]).toBe(1);
+    expect(lines[lines.length - 1]).toBe(100000);
+    expect(parseLineRanges('99999999')).toEqual([]);
+    expect(parseLineRanges('99998-100003, 7')).toEqual([7, 99998, 99999, 100000]);
+  });
 });
 
 describe('parseUnifiedDiff', () => {
@@ -51,6 +59,29 @@ describe('parseUnifiedDiff', () => {
     ].join('\n'));
     expect(lines.map((l) => l.text)).toEqual(['old', 'new', 'keep']);
     expect(lines[2]).toEqual({ type: 'context', text: 'keep', oldNumber: 5, newNumber: 5 });
+  });
+  it('keeps changed lines that only look like file headers in a header-less diff', () => {
+    const lines = parseUnifiedDiff(' SELECT 1;\n--- old comment\n+-- new comment\n+++ counter;');
+    expect(lines).toEqual([
+      { type: 'context', text: 'SELECT 1;', oldNumber: 1, newNumber: 1 },
+      { type: 'remove', text: '-- old comment', oldNumber: 2 },
+      { type: 'add', text: '-- new comment', newNumber: 2 },
+      { type: 'add', text: '++ counter;', newNumber: 3 },
+    ]);
+  });
+  it('still skips a ---/+++ header pair that has no hunk header', () => {
+    expect(parseUnifiedDiff('--- a/x.ts\n+++ b/x.ts\n-old\n+new').map((l) => l.text)).toEqual(['old', 'new']);
+  });
+  it('skips every git metadata line between "diff --git" and the first hunk', () => {
+    const lines = parseUnifiedDiff([
+      'diff --git a/new.ts b/new.ts', 'new file mode 100644', 'index 0000000..1234567',
+      '--- /dev/null', '+++ b/new.ts', '@@ -0,0 +1 @@', '+hello',
+      'diff --git a/old.png b/old.png', 'deleted file mode 100644', 'Binary files a/old.png and /dev/null differ',
+    ].join('\n'));
+    expect(lines).toEqual([{ type: 'add', text: 'hello', newNumber: 1 }]);
+  });
+  it('does not mistake an unmarked code line starting with "index " for git metadata', () => {
+    expect(parseUnifiedDiff('index = 0;\n+index += 1;').map((l) => l.text)).toEqual(['index = 0;', 'index += 1;']);
   });
 });
 

@@ -58,7 +58,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   const { fps } = useVideoConfig();
   const p = resolveTheme(theme, accent);
   const enter = spring({ frame, fps, config: { damping: 200 } });
-  const highlighted = parseLineRanges(highlightLines);
+  const highlighted = React.useMemo(() => parseLineRanges(highlightLines), [highlightLines]);
   const hlOn = frame > 20 + code.split('\n').length * 2;
 
   return (

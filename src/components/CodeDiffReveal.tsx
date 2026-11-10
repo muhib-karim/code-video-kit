@@ -12,7 +12,7 @@ export const codeDiffRevealSchema = z.object({
   diff: z
     .string()
     .describe(
-      'Unified diff body: every line starts with "+" (added), "-" (removed) or " " (context). "+++", "---" and "@@" header lines are skipped. Use "\\n" between lines.',
+      'Unified diff body: every line starts with "+" (added), "-" (removed) or " " (context). File headers ("--- a/file" followed by "+++ b/file") and "@@" lines are skipped. Use "\\n" between lines.',
     ),
   language: languageSchema,
   filename: z.string().describe('File name shown in the window title bar. Empty string hides it.'),
