@@ -5,6 +5,7 @@ import { buildLinePath, niceMax, pathLength, scalePoints, speedup } from '../src
 import { buildTree } from '../src/lib/fileTree';
 import { clamp, formatNumber, lerp, progress } from '../src/lib/math';
 import { resolveTheme, withAlpha, readableOn } from '../src/theme';
+import { sliceChars } from '../src/internal/text';
 
 describe('parseLineRanges', () => {
   it('parses single lines and ranges', () => {
@@ -142,5 +143,25 @@ describe('theme', () => {
   it('readableOn picks contrasting text', () => {
     expect(readableOn('#ffffff')).toBe('#0B0D12');
     expect(readableOn('#000000')).toBe('#FFFFFF');
+  });
+});
+
+describe('sliceChars', () => {
+  it('slices like String.slice for BMP text', () => {
+    expect(sliceChars('hello', 0)).toBe('');
+    expect(sliceChars('hello', 2)).toBe('he');
+    expect(sliceChars('hello', 99)).toBe('hello');
+  });
+  it('never ends between the halves of a surrogate pair', () => {
+    expect(sliceChars('a😀b', 1)).toBe('a');
+    expect(sliceChars('a😀b', 2)).toBe('a');
+    expect(sliceChars('a😀b', 3)).toBe('a😀');
+    expect(sliceChars('a😀b', 4)).toBe('a😀b');
+  });
+  it('tolerates negative, fractional and non-finite counts', () => {
+    expect(sliceChars('abc', -1)).toBe('');
+    expect(sliceChars('abc', 1.9)).toBe('a');
+    expect(sliceChars('abc', NaN)).toBe('');
+    expect(sliceChars('abc', Infinity)).toBe('abc');
   });
 });

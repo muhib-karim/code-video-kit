@@ -6,6 +6,9 @@ import { SubtitleBar, subtitleBarDefaults } from '../src/components/SubtitleBar'
 import { TerminalSession, terminalSessionDefaults } from '../src/components/TerminalSession';
 import { LowerThird, lowerThirdDefaults } from '../src/components/LowerThird';
 import { CodeHighlightSteps, codeHighlightStepsDefaults } from '../src/components/CodeHighlightSteps';
+import { CodeTyping, codeTypingDefaults } from '../src/components/CodeTyping';
+import { EndCard, endCardDefaults } from '../src/components/EndCard';
+import { CommitLog, commitLogDefaults } from '../src/components/CommitLog';
 
 // Supply a composition clock without a browser; keep Remotion's animation math real.
 const clock = vi.hoisted(() => ({ frame: 0, durationInFrames: 150 }));
@@ -119,5 +122,45 @@ describe('benchmark multipliers', () => {
       items: [{ label: 'Hero', value: 10, highlight: true }, { label: 'Baseline', value: 30 }],
     }));
     expect(html).toContain('3.0× faster');
+  });
+});
+
+describe('typing animations and astral characters', () => {
+  // Half of a surrogate pair renders as U+FFFD, so it must never reach the markup.
+  const LONE_SURROGATE = /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
+  const framesWithLoneSurrogate = (from: number, to: number, render: () => string): number[] => {
+    const bad: number[] = [];
+    for (let f = from; f <= to; f++) {
+      clock.frame = f;
+      if (LONE_SURROGATE.test(render())) bad.push(f);
+    }
+    return bad;
+  };
+
+  it('CodeTyping never shows half an emoji while typing', () => {
+    const props = { ...codeTypingDefaults, code: 'log("😀😀");', charsPerFrame: 1, startFrame: 0 };
+    expect(framesWithLoneSurrogate(0, 14, () => renderToStaticMarkup(createElement(CodeTyping, props)))).toEqual([]);
+    clock.frame = 14;
+    expect(renderToStaticMarkup(createElement(CodeTyping, props))).toContain('😀😀');
+  });
+
+  it('TerminalSession never shows half an emoji while typing a command', () => {
+    const props = { ...terminalSessionDefaults, commands: [{ command: 'echo 🚀 ok', output: [] }], charsPerFrame: 1 };
+    expect(framesWithLoneSurrogate(20, 40, () => renderToStaticMarkup(createElement(TerminalSession, props)))).toEqual([]);
+  });
+
+  it('EndCard never shows half an emoji while typing the command', () => {
+    const props = { ...endCardDefaults, command: 'npm i 🚀kit' };
+    expect(framesWithLoneSurrogate(20, 45, () => renderToStaticMarkup(createElement(EndCard, props)))).toEqual([]);
+  });
+
+  it('CommitLog uses a whole character as the avatar initial', () => {
+    clock.frame = 100;
+    const html = renderToStaticMarkup(createElement(CommitLog, {
+      ...commitLogDefaults,
+      commits: [{ hash: 'a1f9c3e2', message: 'feat: emoji author', author: '😀dev' }],
+    }));
+    expect(LONE_SURROGATE.test(html)).toBe(false);
+    expect(html.match(/😀/g)).toHaveLength(2);
   });
 });

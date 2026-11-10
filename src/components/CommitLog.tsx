@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { baseThemeDefaults, baseThemeSchema, fonts, radii, resolveTheme, withAlpha } from '../theme';
 import { Backdrop, WindowChrome } from '../internal/ui';
 import { clamp, easeInOutCubic, easeOutCubic, progress } from '../lib/math';
+import { firstChar } from '../internal/text';
 
 export const commitLogSchema = z.object({
   ...baseThemeSchema,
@@ -136,7 +137,7 @@ export const CommitLog: React.FC<CommitLogProps> = ({ theme, accent, branch, com
               const pop = spring({ frame: frame - start, fps, config: { damping: 14, stiffness: 180 } });
               const rowIn = easeOutCubic(progress(frame, start + 2, 12));
               const isHead = i === 0;
-              const initial = c.author.trim().charAt(0).toUpperCase() || '?';
+              const initial = firstChar(c.author.trim()).toUpperCase() || '?';
               return (
                 <div key={i} style={{ position: 'relative', height: ROW_H, display: 'flex', alignItems: 'center' }}>
                   <div style={{ width: GRAPH_X * 2, height: ROW_H, flexShrink: 0, position: 'relative' }}>

@@ -5,6 +5,7 @@ import { baseThemeDefaults, baseThemeSchema, fonts, languageSchema, resolveTheme
 import { Backdrop, TokenLine, WindowChrome } from '../internal/ui';
 import { tokenize, type Token } from '../lib/tokenizer';
 import { clamp } from '../lib/math';
+import { sliceChars } from '../internal/text';
 
 export const codeTypingSchema = z.object({
   ...baseThemeSchema,
@@ -57,7 +58,7 @@ function sliceTokens(tokens: readonly Token[], count: number): Token[] {
       out.push(t);
       left -= t.text.length;
     } else {
-      out.push({ type: t.type, text: t.text.slice(0, left) });
+      out.push({ type: t.type, text: sliceChars(t.text, left) });
       left = 0;
     }
   }
