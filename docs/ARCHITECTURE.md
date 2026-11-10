@@ -28,8 +28,10 @@ code-video-kit is a TypeScript library of Remotion components for code and data 
 
 ## Build, test and deploy
 
-- `.github/workflows/ci.yml` runs on every push and pull request: install, typecheck, test, build and `npm pack` (the tarball is uploaded as an artifact).
-- `.github/workflows/gallery.yml` runs on pushes to `main`: install, typecheck, test, build, emit the registry, render every composition, copy the render times into `gallery/` and deploy the gallery to GitHub Pages.
-- `.github/workflows/release.yml` runs on `v*` tags: install, typecheck, test, build, pack, and publish a GitHub Release with the tarball attached.
+- `.github/workflows/ci.yml` runs on pull requests and on pushes to `main`. The `build` job installs with `npm ci` from the committed `package-lock.json`, then lints, typechecks, tests, builds, audits production dependencies (`npm audit --omit=dev --audit-level=high`) and runs `npm pack` (the tarball is uploaded as an artifact). The `secrets` job scans the full git history with gitleaks.
+- `.github/workflows/gallery.yml` runs on pushes to `main`: install, typecheck, test, build, emit the registry, render every composition, copy the render times into `gallery/` and deploy the gallery to GitHub Pages. Started manually on any other branch it does everything except publish, which makes it the render check for changes that unit tests cannot cover (for example a Remotion upgrade).
+- `.github/workflows/release.yml` runs on `v*` tags: install, lint, typecheck, test, build, pack, and publish a GitHub Release with the tarball attached.
+
+The audit gate covers what consumers install. Development-only tooling is not gated: the vitest 2 toolchain, zod 3 (the library's peer range) and the `minimatch` used by ESLint carry advisories that only a major upgrade removes. Check the current state with `npm audit`.
 
 To release: bump `version` in `package.json`, add a [CHANGELOG](../CHANGELOG.md) entry, and push a tag `vX.Y.Z`.
