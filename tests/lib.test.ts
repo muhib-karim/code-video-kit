@@ -196,3 +196,43 @@ describe('sliceChars', () => {
     expect(sliceChars('abc', Infinity)).toBe('abc');
   });
 });
+
+describe('edge cases: empty input, zero spans, non-positive durations', () => {
+  it('progress is a step for zero and negative durations', () => {
+    expect(progress(10, 10, 0)).toBe(1);
+    expect(progress(9, 10, -5)).toBe(0);
+    expect(progress(11, 10, -5)).toBe(1);
+  });
+  it('scalePoints handles no points, one point and a flat series', () => {
+    expect(scalePoints([], 200, 100, 0, 1)).toEqual([]);
+    expect(scalePoints([5], 200, 100, 0, 10)).toEqual([{ x: 0, y: 50 }]);
+    expect(scalePoints([3, 3], 200, 100, 3, 3)).toEqual([
+      { x: 0, y: 100 },
+      { x: 200, y: 100 },
+    ]);
+  });
+  it('line helpers accept empty and single-point input', () => {
+    expect(buildLinePath([])).toBe('');
+    expect(pathLength([])).toBe(0);
+    expect(pathLength([{ x: 1, y: 1 }])).toBe(0);
+  });
+  it('niceMax falls back to 1 for non-positive or NaN input and handles fractions', () => {
+    expect(niceMax(-5)).toBe(1);
+    expect(niceMax(NaN)).toBe(1);
+    expect(niceMax(0.3)).toBe(0.5);
+    expect(niceMax(1000)).toBe(1000);
+  });
+  it('speedup is 0 when either side is not positive', () => {
+    expect(speedup(10, 0, true)).toBe(0);
+    expect(speedup(-1, 10, false)).toBe(0);
+    expect(speedup(NaN, 10, false)).toBe(0);
+  });
+  it('buildTree ignores empty paths and repeated slashes', () => {
+    expect(buildTree([])).toEqual([]);
+    expect(buildTree([{ path: '' }, { path: '/' }, { path: 'a//b' }]).map((r) => r.path)).toEqual(['a', 'a/b']);
+  });
+  it('parseUnifiedDiff returns no lines for empty input', () => {
+    expect(parseUnifiedDiff('')).toEqual([]);
+    expect(parseUnifiedDiff('\n')).toEqual([{ type: 'context', text: '', oldNumber: 1, newNumber: 1 }]);
+  });
+});

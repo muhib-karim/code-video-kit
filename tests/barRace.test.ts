@@ -71,4 +71,25 @@ describe('frameToKeyTime', () => {
     expect(frameToKeyTime(45, 30)).toBe(1.5);
     expect(frameToKeyTime(10, 0)).toBe(0);
   });
+  it('is 0 for a negative keyframe length', () => {
+    expect(frameToKeyTime(10, -30)).toBe(0);
+  });
+});
+
+describe('edge cases', () => {
+  it('returns no rows for no series', () => {
+    expect(racePositions([], 1)).toEqual([]);
+    expect(rankAt([], 0)).toEqual([]);
+  });
+  it('holds a shorter series at its last value while longer ones keep moving', () => {
+    const ragged: RaceSeries[] = [
+      { label: 'short', values: [5] },
+      { label: 'long', values: [1, 3, 9] },
+      { label: 'none', values: [] },
+    ];
+    expect(valuesAt(ragged, 1.5)).toEqual([5, 6, 0]);
+    const rows = racePositions(ragged, 2);
+    expect(rows.map((r) => r.rank)).toEqual([1, 0, 2]);
+    expect(rows.every((r) => Number.isFinite(r.position) && Number.isFinite(r.value))).toBe(true);
+  });
 });
