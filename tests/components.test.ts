@@ -9,6 +9,7 @@ import { CodeHighlightSteps, codeHighlightStepsDefaults } from '../src/component
 import { CodeTyping, codeTypingDefaults } from '../src/components/CodeTyping';
 import { EndCard, endCardDefaults } from '../src/components/EndCard';
 import { CommitLog, commitLogDefaults } from '../src/components/CommitLog';
+import { KineticTitle, kineticTitleDefaults } from '../src/components/KineticTitle';
 
 // Supply a composition clock without a browser; keep Remotion's animation math real.
 const clock = vi.hoisted(() => ({ frame: 0, durationInFrames: 150 }));
@@ -162,5 +163,62 @@ describe('typing animations and astral characters', () => {
     }));
     expect(LONE_SURROGATE.test(html)).toBe(false);
     expect(html.match(/😀/g)).toHaveLength(2);
+  });
+});
+
+describe('kinetic title highlights', () => {
+  const highlighted = (text: string, highlight: string[]): number => {
+    clock.frame = 80;
+    const html = renderToStaticMarkup(createElement(KineticTitle, { ...kineticTitleDefaults, accent: '#123456', text, highlight }));
+    // Highlighted words are the only elements whose text colour is the accent.
+    return (html.match(/(?<![-\w])color:#123456/g) ?? []).length;
+  };
+
+  it('compares letters of any script instead of stripping everything outside a-z', () => {
+    expect(highlighted('Über uns: Ber', ['über'])).toBe(1);
+    expect(highlighted('Naïve or nave', ['naïve'])).toBe(1);
+  });
+
+  it('still ignores case and punctuation', () => {
+    expect(highlighted('Launch videos. Now', ['Videos'])).toBe(1);
+    expect(highlighted('Launch videos. Now', [])).toBe(0);
+  });
+});
+
+describe('highlight steps without lines', () => {
+  const BAND = /box-shadow:inset 3px 0 0 #7C6CFF, 0 0 32px [^;]*;opacity:([0-9.]+)/;
+  const props = {
+    ...codeHighlightStepsDefaults,
+    steps: [
+      { lines: '', label: 'Caption only marker', durationInFrames: 60 },
+      { lines: '3-6', label: 'Focused marker', durationInFrames: 60 },
+      { lines: '99', label: 'Out of range marker', durationInFrames: 60 },
+    ],
+  };
+  const render = (frame: number) => {
+    clock.frame = frame;
+    return renderToStaticMarkup(createElement(CodeHighlightSteps, props));
+  };
+
+  it('shows the caption with no band and nothing dimmed', () => {
+    const html = render(40);
+    expect(html).toContain('Caption only marker');
+    expect(BAND.exec(html)?.[1]).toBe('0');
+    expect(html).not.toContain('opacity:0.3');
+  });
+
+  it('fades the band in on the next step that has lines', () => {
+    const html = render(119);
+    expect(html).toContain('Focused marker');
+    expect(BAND.exec(html)?.[1]).toBe('1');
+    expect(html).toContain('top:76px;height:152px');
+    expect(html).toContain('opacity:0.3');
+  });
+
+  it('fades the band out again when a step points past the end of the code', () => {
+    const html = render(179);
+    expect(html).toContain('Out of range marker');
+    expect(BAND.exec(html)?.[1]).toBe('0');
+    expect(html).not.toContain('opacity:0.3');
   });
 });
