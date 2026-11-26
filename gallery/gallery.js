@@ -116,9 +116,20 @@
   var playing = null;
   var playAttempt = 0;
 
+  function safeMediaSrc(raw) {
+    return typeof raw === 'string' &&
+      /^[A-Za-z0-9._/-]+\.(?:mp4|webm)$/i.test(raw) &&
+      raw.indexOf('..') === -1 &&
+      raw.charAt(0) !== '/'
+      ? raw
+      : null;
+  }
+
   function ensureVideo(media) {
     var video = media.querySelector('video');
     if (video) return video;
+    var src = safeMediaSrc(media.getAttribute('data-src'));
+    if (!src) return null;
     video = el('video', {
       muted: true,
       loop: true,
@@ -128,7 +139,7 @@
       tabindex: '-1',
     });
     video.muted = true;
-    video.src = media.getAttribute('data-src');
+    video.src = src;
     video.addEventListener('error', function () {
       if (playing === media) stop(media);
     });
@@ -139,6 +150,7 @@
   function play(media) {
     if (playing && playing !== media) stop(playing);
     var video = ensureVideo(media);
+    if (!video) return;
     var attempt = ++playAttempt;
     var p = video.play();
     if (p && p.catch) p.catch(function () {
