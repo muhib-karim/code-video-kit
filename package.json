@@ -61,7 +61,7 @@
     "@remotion/bundler": "4.0.545",
     "@remotion/cli": "4.0.542",
     "@remotion/renderer": "4.0.542",
-    "@types/node": "20.17.10",
+    "@types/node": "26.6.6",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "eslint": "10.15.0",
